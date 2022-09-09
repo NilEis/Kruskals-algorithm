@@ -1,3 +1,6 @@
 [submodule "extern/union_find"]
 	path = extern/union_find
 	url = https://github.com/NilEis/union_find.git
+[submodule "extern/raylib"]
+	path = extern/raylib
+	url = https://github.com/raysan5/raylib.git
