@@ -28,4 +28,12 @@ else()
 message(WARNING "IPO is not supported: ${output}")
 endif()
 
-target_link_libraries(kruskal union_find_static raylib_static m)
+target_link_libraries(kruskal union_find_static raylib_static)
+
+install(TARGETS kruskal CONFIGURATIONS Release RUNTIME DESTINATION .)
+
+set(CPACK_PROJECT_NAME ${PROJECT_NAME})
+set(CPACK_PROJECT_VERSION ${PROJECT_VERSION})
+set (CPACK_NSIS_MENU_LINKS "https://github.com/NilEis/kruskal" "GitHub Repository" "kruskal.exe" "Kruskal's algorithm for MSTs" "Uninstall.exe" "Uninstall")
+set (CPACK_RESOURCE_FILE_LICENSE "${CMAKE_CURRENT_SOURCE_DIR}/LICENSE")
+include(CPack)
