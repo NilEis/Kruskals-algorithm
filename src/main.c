@@ -6,6 +6,7 @@
 #include "raylib.h"
 #include "union_find.h"
 #include <unistd.h>
+#include "config.h"
 
 #define WIDTH 1200
 #define HEIGHT 800
@@ -29,7 +30,7 @@ typedef struct entry
 
 void main(int argc, char **argv)
 {
-    uint32_t num_nodes = 15;
+    uint32_t num_nodes = 25;
     if (argc == 2)
     {
         sscanf(argv[1], "%" SCNu32, &num_nodes);
@@ -64,7 +65,7 @@ void main(int argc, char **argv)
             {
                 s = m;
             }
-            else if (s->d > m->d)
+            else if (s->d >= m->d)
             {
                 m->next = s;
                 s = m;
@@ -98,7 +99,6 @@ void main(int argc, char **argv)
         }
         else
         {
-            printf("%d\n", s->d);
             union_find_t *a = uf_find(s->a->s);
             union_find_t *b = uf_find(s->b->s);
             if (a != b)
@@ -110,12 +110,20 @@ void main(int argc, char **argv)
                 DrawLineEx((Vector2){s->a->x, s->a->y}, (Vector2){s->b->x, s->b->y}, 5, BLUE);
                 EndTextureMode();
             }
+            BeginDrawing();
+            ClearBackground(BLACK);
+            DrawTexturePro(target.texture, (Rectangle){0, 0, (float)target.texture.width, (float)-target.texture.height}, (Rectangle){0, 0, (float)GetScreenWidth(), (float)GetScreenHeight()}, (Vector2){0, 0}, 0.0, WHITE);
+            DrawLineEx((Vector2){s->a->x, s->a->y}, (Vector2){s->b->x, s->b->y}, 5, RED);
+            EndDrawing();
+            WaitTime(0.25);
+            printf("%d\n",s->d);
             s = s->next;
         }
     }
+    CloseWindow();
     for (int i = 0; i < num_nodes; i++)
     {
-        free(nodes->s);
+        free(nodes[i].s);
     }
     free(nodes);
     return;

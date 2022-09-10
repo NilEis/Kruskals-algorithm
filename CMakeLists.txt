@@ -9,6 +9,9 @@ endif()
 add_subdirectory(extern/union_find)
 add_subdirectory(extern/raylib)
 
+set(BUILD_WITH_DOCS OFF)
+set(BUILD_EXAMPLES OFF)
+
 add_executable(kruskal src/main.c)
 
 include(CheckIPOSupported)
