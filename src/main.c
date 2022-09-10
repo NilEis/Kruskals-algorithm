@@ -7,8 +7,8 @@
 #include "union_find.h"
 #include <unistd.h>
 
-#define WIDTH 600
-#define HEIGHT 400
+#define WIDTH 1200
+#define HEIGHT 800
 
 RenderTexture2D target;
 
@@ -29,7 +29,7 @@ typedef struct entry
 
 void main(int argc, char **argv)
 {
-    uint32_t num_nodes = 5;
+    uint32_t num_nodes = 15;
     if (argc == 2)
     {
         sscanf(argv[1], "%" SCNu32, &num_nodes);
@@ -64,6 +64,11 @@ void main(int argc, char **argv)
             {
                 s = m;
             }
+            else if (s->d > m->d)
+            {
+                m->next = s;
+                s = m;
+            }
             else
             {
                 entry_t *tmp = s;
@@ -75,6 +80,7 @@ void main(int argc, char **argv)
                     }
                     tmp = tmp->next;
                 }
+                m->next = tmp->next;
                 tmp->next = m;
             }
         }
@@ -88,10 +94,11 @@ void main(int argc, char **argv)
             ClearBackground(BLACK);
             DrawTexturePro(target.texture, (Rectangle){0, 0, (float)target.texture.width, (float)-target.texture.height}, (Rectangle){0, 0, (float)GetScreenWidth(), (float)GetScreenHeight()}, (Vector2){0, 0}, 0.0, WHITE);
             EndDrawing();
-            s = st;
+            //s = st;
         }
         else
         {
+            printf("%d\n", s->d);
             union_find_t *a = uf_find(s->a->s);
             union_find_t *b = uf_find(s->b->s);
             if (a != b)
