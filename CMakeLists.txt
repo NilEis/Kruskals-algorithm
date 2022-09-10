@@ -32,8 +32,22 @@ target_link_libraries(kruskal union_find_static raylib_static)
 
 install(TARGETS kruskal CONFIGURATIONS Release RUNTIME DESTINATION .)
 
+if (${PLATFORM} MATCHES "Web")
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -O2 -s USE_GLFW=3 -s ASSERTIONS=0 -s WASM=1 -s ASYNCIFY")
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -s ALLOW_MEMORY_GROWTH=1 --no-heap-copy")
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} --shell-file ../src/shell.html")
+    set(CMAKE_EXECUTABLE_SUFFIX ".html")
+
+    # Remove the -rdynamic flag because otherwise emscripten
+    # does not generate HTML+JS+WASM files, only a non-working
+    # and fat HTML
+    string(REPLACE "-rdynamic" "" CMAKE_SHARED_LIBRARY_LINK_C_FLAGS "${CMAKE_SHARED_LIBRARY_LINK_C_FLAGS}")
+endif()
+
 set(CPACK_PROJECT_NAME ${PROJECT_NAME})
 set(CPACK_PROJECT_VERSION ${PROJECT_VERSION})
-set (CPACK_NSIS_MENU_LINKS "https://github.com/NilEis/kruskal" "GitHub Repository" "kruskal.exe" "Kruskal's algorithm for MSTs" "Uninstall.exe" "Uninstall")
+set (CPACK_NSIS_UNINSTALL_NAME "uninstall")
+set (CPACK_NSIS_MENU_LINKS "https://github.com/NilEis/kruskal" "GitHub Repository" "kruskal.exe" "Kruskal's algorithm for MSTs" "uninstall.exe" "Uninstall")
 set (CPACK_RESOURCE_FILE_LICENSE "${CMAKE_CURRENT_SOURCE_DIR}/LICENSE")
+set (CPACK_NSIS_URL_INFO_ABOUT "https://github.com/NilEis/kruskal")
 include(CPack)

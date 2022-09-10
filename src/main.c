@@ -14,8 +14,8 @@
 #define LOG(x, ...) ;
 #endif
 
-#define WIDTH 1200
-#define HEIGHT 800
+#define WIDTH 1280
+#define HEIGHT 720
 
 RenderTexture2D target;
 RenderTexture2D target_2;
@@ -115,6 +115,10 @@ void main(int argc, char **argv)
     entry_t *st = s;
     while (!WindowShouldClose())
     {
+        if(IsMouseButtonDown(0))
+        {
+            ToggleFullscreen();
+        }
         if (s == NULL || num_edges_in_tree == num_nodes - 1)
         {
             BeginDrawing();
