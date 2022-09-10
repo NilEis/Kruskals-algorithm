@@ -28,4 +28,4 @@ else()
 message(WARNING "IPO is not supported: ${output}")
 endif()
 
-target_link_libraries(kruskal union_find_static raylib_static)
+target_link_libraries(kruskal union_find_static raylib_static m)
