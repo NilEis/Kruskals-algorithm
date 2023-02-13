@@ -20,6 +20,9 @@ jobs:
     steps:
     - uses: actions/checkout@v3
     
+    - name: Get dependencies
+      run: apt install libxrandr-dev
+    
     - name: Clone submodules
       run: git submodule update --init --recursive
 
