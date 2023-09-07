@@ -1,7 +1,6 @@
 cmake_minimum_required(VERSION 3.9.0)
 project(kruskal VERSION 0.1.0 LANGUAGES C)
 
-link_libraries("-static")
 if (CMAKE_C_COMPILER_ID STREQUAL "GNU")
     add_compile_options(-ffunction-sections -fdata-sections -Wall)
 endif()
