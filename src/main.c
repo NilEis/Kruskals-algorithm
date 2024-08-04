@@ -2,11 +2,9 @@
 #include <stdlib.h>
 #include <time.h>
 #include <stdint.h>
-#include <inttypes.h>
 #include "raylib.h"
 #include "union_find.h"
 #include <unistd.h>
-#include "config.h"
 
 #ifndef NDEBUG
 #define LOG(x, ...) printf(x, __VA_ARGS__)
@@ -30,139 +28,146 @@ typedef struct
 typedef struct entry
 {
     uint32_t d;
-    node_t *a;
-    node_t *b;
-    struct entry *next;
+    int a;
+    int b;
 } entry_t;
+
+// ret < 0 if a < b
+int compare_edges(const void *a, const void *b)
+{
+    const entry_t *e1 = a;
+    const entry_t *e2 = b;
+    return e1->d - e2->d;
+}
 
 int main(int argc, char **argv)
 {
-    uint32_t num_edges_in_tree = 0;
-    uint32_t num_nodes = 200;
+    size_t num_edges_in_tree = 0;
+    size_t num_nodes = 150;
     if (argc == 2)
     {
-        sscanf(argv[1], "%" SCNu32, &num_nodes);
+        sscanf(argv[1], "%lld", &num_nodes);
     }
+    const size_t num_edges = (num_nodes * (num_nodes - 1)) / 2;
     srand((unsigned)time(NULL));
-    node_t *nodes = (node_t *)calloc(num_nodes, sizeof(node_t));
+    node_t *V = calloc(num_nodes, sizeof(node_t));
+    if (V == NULL)
+    {
+        printf("Could not allocate %lld bytes.\n", num_nodes * sizeof(node_t));
+        return -1;
+    }
     for (int i = 0; i < num_nodes; i++)
     {
 
-        nodes[i].x = 10 + (rand() % (WIDTH - 20));
-        nodes[i].y = 10 + (rand() % (HEIGHT - 20));
-        nodes[i].s = uf_make_set(&nodes[i]);
+        V[i].x = 10 + (rand() % (WIDTH - 20));
+        V[i].y = 10 + (rand() % (HEIGHT - 20));
+        V[i].s = uf_make_set(&V[i]);
     }
-    entry_t *s = NULL;
-    for (int i = 0; i < num_nodes; i++)
+    entry_t *E = calloc(num_edges, sizeof(entry_t));
+    if (E == NULL)
     {
-        LOG("%d/%d\n", i, num_nodes);
-        for (int j = i + 1; j < num_nodes; j++)
+        printf("Could not allocate %lld bytes.\n", num_edges * sizeof(entry_t));
+        free(V);
+        return -1;
+    }
+    {
+        size_t abc = 0;
+        for (size_t i = 0; i < num_nodes; i++)
         {
-            entry_t *m = (entry_t *)malloc(sizeof(entry_t));
-            m->a = &nodes[i];
-            m->b = &nodes[j];
-            int32_t x = (int32_t)nodes[i].x - (int32_t)nodes[j].x;
-            int32_t y = (int32_t)nodes[i].y - (int32_t)nodes[j].y;
-            m->d = (x * x + y * y);
-            m->next = NULL;
-            if (s == NULL)
+            for (size_t j = i + 1; j < num_nodes; j++)
             {
-                LOG("m ist NULL %d\n", m->d);
-                s = m;
+                E[abc].a = i;
+                E[abc].b = j;
+                int32_t x = (int32_t)V[i].x - (int32_t)V[j].x;
+                int32_t y = (int32_t)V[i].y - (int32_t)V[j].y;
+                E[abc].d = (x * x + y * y);
+                abc++;
             }
-            else if (s->d >= m->d)
-            {
-                m->next = s;
-                s = m;
-                LOG("m ist kleiner als der start: %d -> %d\n", m->d, s->d);
-            }
-            else
-            {
-                entry_t *tmp = s;
-                while (tmp->next != NULL && tmp->next->d <= m->d)
-                {
-                    //LOG("s ist kleiner als m: %d -> %d\n", tmp->d, m->d);
-                    tmp = tmp->next;
-                }
-                //LOG("m eingefuegt hinter tmp: %d -> %d\n", tmp->d, m->d);
-                m->next = tmp->next;
-                tmp->next = m;
-            }
+            printf("%lld/%lld\n", i, num_nodes);
         }
     }
+    qsort(E, num_edges, sizeof(entry_t), compare_edges);
     InitWindow(WIDTH, HEIGHT, "Kruskal's algorithm");
-    //ToggleFullscreen();
+    // ToggleFullscreen();
     target = LoadRenderTexture(WIDTH, HEIGHT);
     target_2 = LoadRenderTexture(WIDTH, HEIGHT);
     BeginTextureMode(target);
     ClearBackground((Color){0, 0, 0, 0});
-    for (int i = 0; i < num_nodes; i++)
+    for (size_t i = 0; i < num_nodes; i++)
     {
-        DrawCircle(nodes[i].x, nodes[i].y, 4, RAYWHITE);
+        DrawCircle(V[i].x, V[i].y, 1.5, RAYWHITE);
     }
     EndTextureMode();
     BeginTextureMode(target_2);
     {
         ClearBackground((Color){0, 0, 0, 0});
-        entry_t *tmp = s;
-        while (tmp != NULL)
+        for (size_t i = 0; i < num_edges; i++)
         {
-            DrawLineEx((Vector2){tmp->a->x, tmp->a->y}, (Vector2){tmp->b->x, tmp->b->y}, 1, (Color){245, 245, 245, 125});
-            tmp = tmp->next;
+            DrawLineEx((Vector2){V[E[i].a].x, V[E[i].a].y}, (Vector2){V[E[i].b].x, V[E[i].b].y}, 1, (Color){245, 245, 245, 125});
         }
     }
     EndTextureMode();
-    entry_t *st = s;
-    while (!WindowShouldClose())
+    for (size_t i = 0; num_edges_in_tree != num_nodes - 1 && i < num_edges; i++)
     {
-        if(IsMouseButtonDown(0))
+        if (IsMouseButtonDown(0))
         {
             ToggleFullscreen();
         }
-        if (s == NULL || num_edges_in_tree == num_nodes - 1)
+        union_find_t *a = uf_find(V[E[i].a].s);
+        union_find_t *b = uf_find(V[E[i].b].s);
+        if (a != b)
         {
-            BeginDrawing();
-            ClearBackground(BLACK);
-            DrawTexturePro(target.texture, (Rectangle){0, 0, (float)target.texture.width, (float)-target.texture.height}, (Rectangle){0, 0, (float)GetScreenWidth(), (float)GetScreenHeight()}, (Vector2){0, 0}, 0.0, WHITE);
-            EndDrawing();
-            //s = st;
+            BeginTextureMode(target);
+            union_find_t *p = uf_merge(V[E[i].a].s, V[E[i].b].s);
+            V[E[i].a].s = p;
+            V[E[i].b].s = p;
+            DrawLineEx((Vector2){V[E[i].a].x, V[E[i].a].y}, (Vector2){V[E[i].b].x, V[E[i].b].y}, 2, BLUE);
+            EndTextureMode();
+            num_edges_in_tree++;
         }
         else
         {
-            union_find_t *a = uf_find(s->a->s);
-            union_find_t *b = uf_find(s->b->s);
-            if (a != b)
-            {
-                BeginTextureMode(target);
-                union_find_t *p = uf_merge(s->a->s, s->b->s);
-                s->a->s = p;
-                s->b->s = p;
-                DrawLineEx((Vector2){s->a->x, s->a->y}, (Vector2){s->b->x, s->b->y}, 2, BLUE);
-                EndTextureMode();
-                num_edges_in_tree++;
-            }
-            BeginDrawing();
-            ClearBackground(BLACK);
-            DrawTexturePro(target_2.texture, (Rectangle){0, 0, (float)target_2.texture.width, (float)-target_2.texture.height}, (Rectangle){0, 0, (float)GetScreenWidth(), (float)GetScreenHeight()}, (Vector2){0, 0}, 0.0, WHITE);
-            DrawTexturePro(target.texture, (Rectangle){0, 0, (float)target.texture.width, (float)-target.texture.height}, (Rectangle){0, 0, (float)GetScreenWidth(), (float)GetScreenHeight()}, (Vector2){0, 0}, 0.0, WHITE);
-            DrawLineEx((Vector2){s->a->x, s->a->y}, (Vector2){s->b->x, s->b->y}, 2, RED);
-            //DrawCircle(s->a->x, s->a->y, s->d, (Color){245, 245, 245, 50});
-            {
-                char buffer[8] = {'\0'};
-                sprintf((char*)&buffer, "%.2f%%", ((float)num_edges_in_tree / (float)num_nodes) * 100.0);
-                DrawText(buffer, 10, 10, 20, RAYWHITE);
-            }
-            EndDrawing();
-            // WaitTime(0.25);
-            LOG("%d\n", s->d);
-            s = s->next;
+            BeginTextureMode(target_2);
+            DrawLineEx((Vector2){V[E[i].a].x, V[E[i].a].y}, (Vector2){V[E[i].b].x, V[E[i].b].y}, 2, BLACK);
+            EndTextureMode();
+        }
+        BeginDrawing();
+        ClearBackground(BLACK);
+        DrawTexturePro(target_2.texture, (Rectangle){0, 0, (float)target_2.texture.width, (float)-target_2.texture.height}, (Rectangle){0, 0, (float)GetScreenWidth(), (float)GetScreenHeight()}, (Vector2){0, 0}, 0.0, WHITE);
+        DrawTexturePro(target.texture, (Rectangle){0, 0, (float)target.texture.width, (float)-target.texture.height}, (Rectangle){0, 0, (float)GetScreenWidth(), (float)GetScreenHeight()}, (Vector2){0, 0}, 0.0, WHITE);
+        DrawLineEx((Vector2){V[E[i].a].x, V[E[i].a].y}, (Vector2){V[E[i].b].x, V[E[i].b].y}, 2, RED);
+        // DrawCircle(s->a->x, s->a->y, s->d, (Color){245, 245, 245, 50});
+        {
+            char buffer[8] = {'\0'};
+            sprintf((char *)&buffer, "%.2f%%", ((float)num_edges_in_tree / (float)num_nodes) * 100.0);
+            DrawText(buffer, 10, 10, 20, RAYWHITE);
+        }
+        EndDrawing();
+        // WaitTime(0.25);
+        LOG("%lld/%lld\n", i, num_nodes - 1);
+        if (WindowShouldClose())
+        {
+            goto CLEANUP;
         }
     }
-    CloseWindow();
-    for (int i = 0; i < num_nodes; i++)
+    while (!WindowShouldClose())
     {
-        free(nodes[i].s);
+        if (IsMouseButtonDown(0))
+        {
+            ToggleFullscreen();
+        }
+        BeginDrawing();
+        ClearBackground(BLACK);
+        DrawTexturePro(target.texture, (Rectangle){0, 0, (float)target.texture.width, (float)-target.texture.height}, (Rectangle){0, 0, (float)GetScreenWidth(), (float)GetScreenHeight()}, (Vector2){0, 0}, 0.0, WHITE);
+        EndDrawing();
     }
-    free(nodes);
+CLEANUP:
+    CloseWindow();
+    for (size_t i = 0; i < num_nodes; i++)
+    {
+        free(V[i].s);
+    }
+    free(V);
+    free(E);
     return 0;
 }
