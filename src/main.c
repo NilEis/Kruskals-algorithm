@@ -35,10 +35,10 @@ typedef struct entry
     struct entry *next;
 } entry_t;
 
-void main(int argc, char **argv)
+int main(int argc, char **argv)
 {
     uint32_t num_edges_in_tree = 0;
-    uint32_t num_nodes = 150;
+    uint32_t num_nodes = 200;
     if (argc == 2)
     {
         sscanf(argv[1], "%" SCNu32, &num_nodes);
@@ -55,7 +55,7 @@ void main(int argc, char **argv)
     entry_t *s = NULL;
     for (int i = 0; i < num_nodes; i++)
     {
-        printf("%d/%d\n", i, num_nodes);
+        LOG("%d/%d\n", i, num_nodes);
         for (int j = i + 1; j < num_nodes; j++)
         {
             entry_t *m = (entry_t *)malloc(sizeof(entry_t));
@@ -81,10 +81,10 @@ void main(int argc, char **argv)
                 entry_t *tmp = s;
                 while (tmp->next != NULL && tmp->next->d <= m->d)
                 {
-                    LOG("s ist kleiner als m: %d -> %d\n", tmp->d, m->d);
+                    //LOG("s ist kleiner als m: %d -> %d\n", tmp->d, m->d);
                     tmp = tmp->next;
                 }
-                LOG("m eingefuegt hinter tmp: %d -> %d\n", tmp->d, m->d);
+                //LOG("m eingefuegt hinter tmp: %d -> %d\n", tmp->d, m->d);
                 m->next = tmp->next;
                 tmp->next = m;
             }
@@ -153,7 +153,7 @@ void main(int argc, char **argv)
                 DrawText(buffer, 10, 10, 20, RAYWHITE);
             }
             EndDrawing();
-            WaitTime(0.25);
+            // WaitTime(0.25);
             LOG("%d\n", s->d);
             s = s->next;
         }
@@ -164,5 +164,5 @@ void main(int argc, char **argv)
         free(nodes[i].s);
     }
     free(nodes);
-    return;
+    return 0;
 }
